@@ -1,6 +1,6 @@
 # tiny-grid-viewer
 
-Inspired by [`json-grid-viewer` and `yaml-grid-viewer`](https://github.com/dutchigor/json-grid-viewer), this VS Code extension opens XML, JSON, JSONL, YAML, INI, TOML and tree command output files in a recursive grid-oriented custom editor backed by Vue.
+Inspired by [`json-grid-viewer`](https://github.com/dutchigor/json-grid-viewer), this VS Code extension opens XML, JSON, JSONL, YAML, INI, TOML and tree command output files in a recursive grid-oriented custom editor backed by Vue.
 
 - Shows structured data as nested grids: each object, array, XML element, INI section, TOML table or tree node opens as a table recursively.
 - For XML, shows attributes as `@attribute` rows alongside child nodes, plus values, comments, CDATA and processing instructions.
