@@ -87,22 +87,30 @@ class TinyGridViewer {
 
       const kind = getDocumentKind(this.document)
       const limits = getConfiguredLimits()
-      validateDocumentBeforeParse(this.document, kind, limits)
+      if (!this.document.readOnly) {
+        validateDocumentBeforeParse(this.document, kind, limits)
+      }
       const doc = kind === 'xml'
         ? parseXmlGrid(this.document.getText())
-        : parseStructuredGrid(this.document.getText(), kind)
+        : parseStructuredGrid(this.document.getText(), kind, {
+          compactGeoJson: isGeoJsonDocument(this.document)
+        })
       validateGridNodeCount(doc, limits)
       this.webviewPanel.webview.postMessage({
         type: 'update',
         doc,
         rows: kind === 'xml' ? flattenXmlTree(doc) : [],
-        error: ''
+        error: '',
+        notice: this.document.notice || '',
+        readOnly: Boolean(this.document.readOnly)
       })
     } catch (error) {
       this.webviewPanel.webview.postMessage({
         type: 'update',
         rows: [],
-        error: error.message
+        error: error.message,
+        notice: this.document.notice || '',
+        readOnly: Boolean(this.document.readOnly)
       })
     }
   }
@@ -111,6 +119,9 @@ class TinyGridViewer {
     try {
       if (this.document.openError) {
         throw new Error(this.document.openError)
+      }
+      if (this.document.readOnly) {
+        throw new Error('This preview is read-only. Open the full file as text to edit it.')
       }
 
       const kind = getDocumentKind(this.document)
@@ -145,3 +156,7 @@ class TinyGridViewer {
 }
 
 exports.TinyGridViewer = TinyGridViewer
+
+function isGeoJsonDocument(document) {
+  return String(document.fileName || document.uri?.fsPath || '').toLowerCase().endsWith('.geojson')
+}

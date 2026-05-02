@@ -16,12 +16,20 @@
       <span class="search-count">{{ searchStatus }}</span>
     </header>
 
+    <div v-if="readOnly" :class="readOnlyBadgeClass" title="This preview is read-only">
+      Read-only preview
+    </div>
+
     <section v-if="error" class="error-panel" role="alert">
       {{ error }}
     </section>
 
+    <section v-if="notice" class="notice-panel" role="status">
+      {{ notice }}
+    </section>
+
     <grid-cell
-      v-else
+      v-if="!error"
       :entry="{ kind: 'node', node: doc }"
       :path="[]"
     />
@@ -59,6 +67,8 @@ export default {
         children: []
       },
       error: '',
+      notice: '',
+      readOnly: false,
       searchQuery: '',
       searchOpen: false,
       searchResults: [],
@@ -79,6 +89,12 @@ export default {
         return '0 / 0'
       }
       return `${this.activeSearchIndex + 1 || 1} / ${this.searchResults.length}`
+    },
+    readOnlyBadgeClass() {
+      return {
+        'readonly-badge': true,
+        'with-search': this.searchOpen
+      }
     }
   },
   watch: {
@@ -209,6 +225,8 @@ export default {
         case 'update':
           this.doc = event.data.doc || this.doc
           this.error = event.data.error || ''
+          this.notice = event.data.notice || ''
+          this.readOnly = Boolean(event.data.readOnly)
           break
       }
     })

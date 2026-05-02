@@ -1,44 +1,54 @@
-# tiny-grid-viewer
+# Tiny Grid Viewer
 
-Inspired by [`json-grid-viewer`](https://github.com/dutchigor/json-grid-viewer), this VS Code extension opens XML, JSON, JSONL, YAML, INI, TOML and tree command output files in a recursive grid-oriented custom editor backed by Vue.
+Languages: [English](README.md) | [中文](README.zh-CN.md) | [Deutsch](README.de.md)
 
-- Shows structured data as nested grids: each object, array, XML element, INI section, TOML table or tree node opens as a table recursively.
-- For XML, shows attributes as `@attribute` rows alongside child nodes, plus values, comments, CDATA and processing instructions.
-- For XML, groups repeated sibling elements as `Array[n]`; arrays can switch between Array and Table views.
-- Preserves XML comments while parsing.
-- Accepts common loose XML conveniences supported by `fast-xml-parser`, JSON/HJSON, JSONL, YAML, INI, TOML and `tree` command output.
-- Updates the grid live when the underlying document changes and remains valid.
-- Supports border-based column resizing, double-click column reset, array/table view switching and basic cell editing.
-- Refuses very large inputs before they can freeze the extension host, with configurable size, JSONL row and rendered-node limits.
+Tiny Grid Viewer is a VS Code extension for opening XML, JSON, JSONL, JSONC, GeoJSON, YAML, INI, TOML and `tree` command output as compact recursive grids. It is inspired by [`json-grid-viewer`](https://github.com/dutchigor/json-grid-viewer) and uses a Vue webview.
+
+## Features
+
+- Shows structured data as nested grids: objects, arrays, XML elements, INI sections, TOML tables and tree nodes open recursively.
+- Supports `.xml`, `.xsd`, `.svg`, `.wsdl`, `.json`, `.jsonc`, `.geojson`, `.jsonl`, `.yaml`, `.yml`, `.ini`, `.cfg`, `.conf`, `.config`, `.properties`, `.toml` and `.tree`.
+- Shows XML attributes as `@attribute` rows, alongside text, comments, CDATA and processing instructions.
+- Groups repeated XML sibling elements as `Array[n]`.
+- Lets arrays switch between list and table views.
+- Supports cell editing for scalar values where the full document is loaded.
+- Supports border-based column resizing and double-click auto-fit.
+- Provides recursive expand, Shift-click deep expand, search overlay and a viewport minimap.
+- Protects VS Code from large-file freezes with configurable limits, JSONL preview mode and compact GeoJSON coordinate summaries.
 
 ## Usage
 
-Open an `.xml`, `.xsd`, `.svg`, `.wsdl`, `.json`, `.jsonl`, `.jsonc`, `.geojson`, `.yaml`, `.yml`, `.ini`, `.cfg`, `.conf`, `.config`, `.properties`, `.toml` or `.tree` file, then right click the editor or file and choose **Open With... > Tiny Grid Viewer**.
+Open a supported file, then choose **Open With... > Tiny Grid Viewer** from the editor or Explorer context menu.
 
-Double click editable cells to update values in place. XML editing supports:
+Double-click editable cells to edit values in place.
 
-- Element and processing-instruction names.
-- Element and processing-instruction attributes, using normal XML attribute text such as `id="book-1" enabled="true"`.
-- Leaf element values.
-- Text, comment, CDATA and processing-instruction values.
-
-JSON, JSONL, YAML, INI and TOML editing currently supports scalar value edits. Tree command output is read-only. The grid refreshes whenever the document is valid. If parsing fails, the webview displays the parser error instead of stale data.
-
-Current editing limits:
-
-- Elements that contain child elements cannot have their value edited directly.
-- Adding, deleting, moving nodes and preserving exact original whitespace are not supported yet.
-- Saving from the grid rewrites the XML document through the parser/builder, so formatting may change.
+XML editing supports element names, processing-instruction names, attributes, leaf values, text nodes, comments, CDATA and processing-instruction values. JSON, JSONL, YAML, INI and TOML editing currently supports scalar value edits. Tree command output is read-only.
 
 ## Large Files
 
-Tiny Grid Viewer builds a complete recursive grid model and sends it to a VS Code webview. There is no single universal file-size ceiling: a small but deeply nested GeoJSON can create more grid nodes than a larger flat JSONL file. The default guards are intentionally conservative:
+Tiny Grid Viewer builds a recursive grid model and sends it to a VS Code webview. There is no single universal file-size ceiling: a deeply nested or coordinate-heavy file can create far more grid nodes than its byte size suggests.
+
+Default guards:
 
 - `tinyGridViewer.maxFileSizeMB`: `100`
-- `tinyGridViewer.maxJsonlRows`: `100000`
-- `tinyGridViewer.maxGridNodes`: `100000`
+- `tinyGridViewer.maxJsonlRows`: `1000000`
+- `tinyGridViewer.maxGridNodes`: `1000000`
+- `tinyGridViewer.jsonlPreviewRows`: `1000`
 
-Set any of these values to `0` to disable that guard, or raise them if your machine can tolerate the extra parsing, message serialization and DOM rendering cost. Files beyond the configured limits are shown as a readable refusal message instead of attempting to render a blank or unresponsive editor.
+Set guard values to `0` to disable them, except `tinyGridViewer.jsonlPreviewRows`, which must be at least `1`.
+
+Oversized JSONL files open in read-only preview mode and show the first configured non-empty rows. The viewer displays a notice panel and a fixed **Read-only preview** badge. Other files beyond configured limits show a readable refusal message instead of attempting to render a blank or unresponsive editor.
+
+For `.geojson` files, `coordinates` arrays are shown as compact read-only summaries. This prevents large geometry payloads from expanding into hundreds of thousands of individual numeric cells.
+
+## Current Limits
+
+- Preview-mode JSONL is read-only.
+- GeoJSON `coordinates` summaries are read-only.
+- Elements that contain child elements cannot have their value edited directly.
+- Adding, deleting and moving nodes are not supported yet.
+- Exact original formatting is not preserved for edited structured documents.
+- Saving from the grid may rewrite formatting through the parser/serializer.
 
 ## Development
 
@@ -65,23 +75,17 @@ vsce package
 
 This repository includes a GitHub Actions workflow that builds a `.vsix` package automatically.
 
-### From a GitHub Release
-
 When a version tag such as `v0.1.0` is pushed, the workflow creates or updates the matching GitHub Release and attaches the generated `.vsix` file to the Release assets.
-
-1. Open the repository's **Releases** page.
-2. Open the target release.
-3. Download the attached `.vsix` file from **Assets**.
 
 ## Release Process
 
 1. Update the version in `package.json` and `package-lock.json`.
-2. Commit and push the version change to GitHub.
+2. Commit and push the version change.
 3. Create and push a version tag such as `v0.1.0`.
 4. Wait for the **Build VSIX** workflow to finish.
-5. Download the `.vsix` file from the Release **Assets** section.
+5. Download the `.vsix` file from the Release assets.
 
-## Note
+## Notes
 
 - The build script keeps `NODE_OPTIONS=--openssl-legacy-provider`, matching the reference extensions' Vue CLI 4 setup on modern Node versions.
-- Review `.vscodeignore` and use `vsce ls` before publishing to confirm the package contents.
+- Review `.vscodeignore` and use `vsce ls` before publishing to confirm package contents.

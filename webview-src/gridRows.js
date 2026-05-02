@@ -79,11 +79,12 @@ export function entryForNode(node) {
 }
 
 export function leafEntryForNode(node, value) {
+  const editable = node && ![ 'tree-node', 'summary' ].includes(node.type)
   return {
     kind: 'leaf',
     type: node?.type || 'empty',
     value,
-    edit: node && node.type !== 'tree-node' ? {
+    edit: editable ? {
       editPath: node.editPath || [],
       field: 'value'
     } : null

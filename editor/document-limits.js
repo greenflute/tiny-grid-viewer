@@ -3,9 +3,10 @@ const fs = require('fs')
 const MB = 1024 * 1024
 
 const DEFAULT_LIMITS = {
-  maxFileSizeMB: 25,
-  maxJsonlRows: 50000,
-  maxGridNodes: 100000
+  maxFileSizeMB: 100,
+  maxJsonlRows: 1000000,
+  maxGridNodes: 1000000,
+  jsonlPreviewRows: 1000
 }
 
 function getConfiguredLimits() {
@@ -15,7 +16,8 @@ function getConfiguredLimits() {
   return {
     maxFileSizeMB: readNumber(config, 'maxFileSizeMB', DEFAULT_LIMITS.maxFileSizeMB),
     maxJsonlRows: readNumber(config, 'maxJsonlRows', DEFAULT_LIMITS.maxJsonlRows),
-    maxGridNodes: readNumber(config, 'maxGridNodes', DEFAULT_LIMITS.maxGridNodes)
+    maxGridNodes: readNumber(config, 'maxGridNodes', DEFAULT_LIMITS.maxGridNodes),
+    jsonlPreviewRows: readNumber(config, 'jsonlPreviewRows', DEFAULT_LIMITS.jsonlPreviewRows)
   }
 }
 

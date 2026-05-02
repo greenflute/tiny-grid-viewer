@@ -27,8 +27,8 @@ function getDocumentKind(document) {
   return 'json'
 }
 
-function parseStructuredGrid(text, kind) {
-  return valueToNode(parseValue(text, kind), '#document', [])
+function parseStructuredGrid(text, kind, options = {}) {
+  return valueToNode(parseValue(text, kind), '#document', [], options)
 }
 
 function parseValue(text, kind) {
@@ -53,26 +53,73 @@ function parseValue(text, kind) {
   return Hjson.parse(text)
 }
 
-function valueToNode(value, name, editPath) {
+function valueToNode(value, name, editPath, options = {}) {
   if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, '__treeNodeName')) {
     return createNode('tree-node', value.__treeNodeName, editPath, value.__treeChildren.map((child, index) =>
-      valueToNode(child, child.__treeNodeName, editPath.concat(index))
+      valueToNode(child, child.__treeNodeName, editPath.concat(index), options)
     ))
+  }
+
+  if (options.compactGeoJson && name === 'coordinates' && Array.isArray(value)) {
+    return createNode('summary', name, editPath, [], summarizeCoordinateArray(value))
   }
 
   if (Array.isArray(value)) {
     return createNode('array', name, editPath, value.map((item, index) =>
-      valueToNode(item, String(index), editPath.concat(index))
+      valueToNode(item, String(index), editPath.concat(index), options)
     ))
   }
 
   if (value && typeof value === 'object') {
     return createNode('object', name, editPath, Object.entries(value).map(([key, item]) =>
-      valueToNode(item, key, editPath.concat(key))
+      valueToNode(item, key, editPath.concat(key), options)
     ))
   }
 
   return createNode(value === null ? 'null' : typeof value, name, editPath, [], value === null ? 'null' : String(value))
+}
+
+function summarizeCoordinateArray(value) {
+  const stats = collectCoordinateStats(value)
+  const parts = [
+    `Coordinates ${stats.positions.toLocaleString()} position${stats.positions === 1 ? '' : 's'}`,
+    `depth ${stats.depth}`
+  ]
+
+  if (stats.sample.length > 0) {
+    parts.push(`sample ${stats.sample.join(', ')}`)
+  }
+
+  return parts.join(' | ')
+}
+
+function collectCoordinateStats(value) {
+  let positions = 0
+  let depth = 0
+  let sample = []
+  const stack = [{ value, level: 1 }]
+
+  while (stack.length > 0) {
+    const current = stack.pop()
+    if (!Array.isArray(current.value)) {
+      continue
+    }
+
+    depth = Math.max(depth, current.level)
+    if (current.value.every(item => typeof item === 'number')) {
+      positions += 1
+      if (sample.length === 0) {
+        sample = current.value.slice(0, 3).map(number => String(number))
+      }
+      continue
+    }
+
+    for (let index = current.value.length - 1; index >= 0; index -= 1) {
+      stack.push({ value: current.value[index], level: current.level + 1 })
+    }
+  }
+
+  return { positions, depth, sample }
 }
 
 function createNode(type, name, editPath, children, value = '') {

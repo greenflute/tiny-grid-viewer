@@ -84,12 +84,45 @@ body {
   color: var(--vscode-descriptionForeground);
 }
 
+.readonly-badge {
+  position: fixed;
+  z-index: 7;
+  top: 12px;
+  right: 12px;
+  padding: 4px 8px;
+  color: var(--vscode-badge-foreground);
+  background: var(--vscode-badge-background);
+  border: 1px solid var(--vscode-contrastBorder, transparent);
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+}
+
+.readonly-badge.with-search {
+  top: 52px;
+}
+
 .error-panel {
   margin: 0;
   padding: 10px 12px;
   color: var(--vscode-errorForeground);
   border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
   background: var(--vscode-inputValidation-errorBackground, transparent);
+  white-space: pre-wrap;
+}
+
+.notice-panel {
+  display: inline-block;
+  max-width: min(70rem, calc(100vw - 48px));
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  color: var(--vscode-editorInfo-foreground, var(--vscode-editor-foreground));
+  border: 1px solid var(--vscode-editorInfo-border, #5d8cc7);
+  background: var(--vscode-editorInfo-background, rgba(64, 128, 192, 0.14));
   white-space: pre-wrap;
 }
 

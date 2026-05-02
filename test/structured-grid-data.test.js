@@ -37,6 +37,17 @@ test('parses jsonl as an array of rows', () => {
   assert.equal(doc.children.length, 2)
 })
 
+test('compacts geojson coordinates into summary nodes', () => {
+  const doc = parseStructuredGrid('{"type":"Point","coordinates":[100.1,0.2]}', 'json', {
+    compactGeoJson: true
+  })
+  const coordinates = doc.children.find(child => child.name === 'coordinates')
+
+  assert.equal(coordinates.type, 'summary')
+  assert.match(coordinates.value, /Coordinates 1 position/)
+  assert.equal(coordinates.children.length, 0)
+})
+
 test('updates json scalar values', () => {
   const updated = updateStructuredCell('{"name":"demo","count":1}', 'json', ['count'], '2')
 
