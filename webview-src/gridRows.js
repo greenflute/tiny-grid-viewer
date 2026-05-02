@@ -107,6 +107,53 @@ export function collectExpandablePaths(entry, basePath) {
   return []
 }
 
+export function collectSearchResults(node, query) {
+  const normalizedQuery = String(query || '').trim().toLowerCase()
+  if (!normalizedQuery) {
+    return []
+  }
+
+  return collectNodeSearchResults(node, [], [], normalizedQuery)
+}
+
+function collectNodeSearchResults(node, basePath, ancestors, query) {
+  return rowsForNode(node).flatMap(row => {
+    const childPath = [ ...basePath, row.id ]
+    const rowText = searchableText(row)
+    const selfMatch = rowText.toLowerCase().includes(query)
+      ? [{ path: childPath, ancestorPaths: ancestors, text: rowText }]
+      : []
+
+    if (row.entry.kind === 'array') {
+      return [
+        ...selfMatch,
+        ...row.entry.items.flatMap((item, index) =>
+          collectNodeSearchResults(item, [ ...childPath, index ], [ ...ancestors, childPath, [ ...childPath, index ] ], query)
+        )
+      ]
+    }
+
+    if (row.entry.kind === 'node') {
+      return [
+        ...selfMatch,
+        ...collectNodeSearchResults(row.entry.node, childPath, [ ...ancestors, childPath ], query)
+      ]
+    }
+
+    return selfMatch
+  })
+}
+
+function searchableText(row) {
+  if (row.entry.kind === 'leaf') {
+    return `${row.key} ${row.entry.value || ''}`
+  }
+  if (row.entry.kind === 'array') {
+    return `${row.key} Array ${row.entry.items.length}`
+  }
+  return `${row.key} ${row.entry.node?.name || ''} ${row.entry.node?.value || ''}`
+}
+
 function collectNodeExpandablePaths(node, basePath) {
   return rowsForNode(node).flatMap(row => {
     const childPath = [ ...basePath, row.id ]

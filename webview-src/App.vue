@@ -1,13 +1,19 @@
 <template>
   <main class="viewer">
-    <header class="toolbar">
+    <header v-if="searchOpen" class="toolbar" @focusout="handleSearchFocusout">
       <input
-        v-model="quickFilter"
+        ref="searchInput"
+        v-model="searchQuery"
         class="filter-input"
         type="search"
-        placeholder="Filter current XML grids"
-        aria-label="Filter current XML grids"
+        placeholder="Search"
+        aria-label="Search"
+        @keydown.enter.prevent="event => jumpSearch(event.shiftKey ? -1 : 1)"
+        @keydown.esc.prevent="closeSearch"
       >
+      <button class="search-button" type="button" @click="jumpSearch(-1)">prev</button>
+      <button class="search-button" type="button" @click="jumpSearch(1)">next</button>
+      <span class="search-count">{{ searchStatus }}</span>
     </header>
 
     <section v-if="error" class="error-panel" role="alert">
@@ -24,6 +30,8 @@
 </template>
 
 <script>
+import { collectSearchResults } from './gridRows'
+
 export default {
   provide() {
     return {
@@ -34,7 +42,10 @@ export default {
         setDisplayMode: (path, value) => this.setDisplayMode(path, value),
         getColumnWidth: (key, headerId) => this.getColumnWidth(key, headerId),
         setColumnWidth: (key, headerId, value) => this.setColumnWidth(key, headerId, value),
-        updateValue: (edit, value) => this.updateValue(edit, value)
+        updateValue: (edit, value) => this.updateValue(edit, value),
+        pathKey: path => this.pathKey(path),
+        isSearchMatch: path => this.isSearchMatch(path),
+        isActiveSearchMatch: path => this.isActiveSearchMatch(path)
       }
     }
   },
@@ -48,11 +59,36 @@ export default {
         children: []
       },
       error: '',
-      quickFilter: '',
+      searchQuery: '',
+      searchOpen: false,
+      searchResults: [],
+      activeSearchIndex: -1,
       uiState: {
         expandedPaths: { '[]': true },
         displayModes: {},
         columnWidths: {}
+      }
+    }
+  },
+  computed: {
+    searchStatus() {
+      if (!this.searchQuery.trim()) {
+        return ''
+      }
+      if (this.searchResults.length === 0) {
+        return '0 / 0'
+      }
+      return `${this.activeSearchIndex + 1 || 1} / ${this.searchResults.length}`
+    }
+  },
+  watch: {
+    searchQuery() {
+      this.updateSearchResults()
+    },
+    doc: {
+      deep: true,
+      handler() {
+        this.updateSearchResults()
       }
     }
   },
@@ -100,6 +136,65 @@ export default {
         ...edit,
         value
       })
+    },
+    updateSearchResults() {
+      this.searchResults = collectSearchResults(this.doc, this.searchQuery)
+      this.activeSearchIndex = this.searchResults.length > 0 ? 0 : -1
+    },
+    jumpSearch(direction) {
+      if (this.searchResults.length === 0) {
+        return
+      }
+
+      const nextIndex = (this.activeSearchIndex + direction + this.searchResults.length) % this.searchResults.length
+      this.activeSearchIndex = nextIndex
+      const result = this.searchResults[nextIndex]
+      result.ancestorPaths.forEach(path => this.setExpanded(path, true))
+      this.$nextTick(() => {
+        requestAnimationFrame(() => this.scrollToPath(result.path))
+      })
+    },
+    scrollToPath(path) {
+      const target = document.querySelector(`[data-grid-path="${CSS.escape(this.pathKey(path))}"]`)
+      target?.scrollIntoView({ block: 'center', inline: 'center' })
+    },
+    isSearchMatch(path) {
+      const key = this.pathKey(path)
+      return this.searchResults.some(result => this.pathKey(result.path) === key)
+    },
+    isActiveSearchMatch(path) {
+      const result = this.searchResults[this.activeSearchIndex]
+      return result ? this.pathKey(result.path) === this.pathKey(path) : false
+    },
+    handleGlobalKeydown(event) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
+        event.preventDefault()
+        this.openSearch()
+      }
+    },
+    openSearch() {
+      this.searchOpen = true
+      this.$nextTick(() => {
+        this.$refs.searchInput?.focus()
+        this.$refs.searchInput?.select()
+      })
+    },
+    closeSearch() {
+      this.searchOpen = false
+      this.searchQuery = ''
+      this.searchResults = []
+      this.activeSearchIndex = -1
+    },
+    handleSearchFocusout(event) {
+      if (this.searchQuery.trim()) {
+        return
+      }
+
+      if (event.currentTarget.contains(event.relatedTarget)) {
+        return
+      }
+
+      this.closeSearch()
     }
   },
   created() {
@@ -117,10 +212,14 @@ export default {
           break
       }
     })
+    window.addEventListener('keydown', this.handleGlobalKeydown)
 
     this.$options.vscode.postMessage({
       type: 'ready'
     })
+  },
+  unmounted() {
+    window.removeEventListener('keydown', this.handleGlobalKeydown)
   }
 }
 </script>

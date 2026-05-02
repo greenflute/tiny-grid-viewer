@@ -16,7 +16,6 @@ node_modules/**
 webview/**
 !webview/css/
 !webview/css/app.css
-!webview/css/chunk-vendors.css
 !webview/js/
 !webview/js/app.js
 !webview/js/chunk-vendors.js

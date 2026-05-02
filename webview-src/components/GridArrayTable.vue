@@ -11,9 +11,19 @@
         <span v-if="hdr.id !== '__index__'">{{ hdr.header }}</span>
       </template>
       <template #body>
-        <tr v-for="(item, index) in tableRows" :key="item.id" class="array-el object">
+        <tr
+          v-for="(item, index) in tableRows"
+          :key="item.id"
+          class="array-el object"
+          :data-grid-path="gridUi.pathKey([ ...path, index ])"
+        >
           <td class="index object">{{ index }}</td>
-          <td v-for="header in valueHeaders" :key="header.id" class="member">
+          <td
+            v-for="header in valueHeaders"
+            :key="header.id"
+            :class="cellClass([ ...path, index, item.pathIds[header.id] ])"
+            :data-grid-path="gridUi.pathKey([ ...path, index, item.pathIds[header.id] ])"
+          >
             <grid-cell :entry="item.values[header.id]" :path="[ ...path, index, item.pathIds[header.id] ]" />
           </td>
         </tr>
@@ -31,7 +41,12 @@
         <span>{{ hdr.header }}</span>
       </template>
       <template #body>
-        <tr v-for="(item, index) in entry.items" :key="item.editPath.join('.')" class="array-el list-mode">
+        <tr
+          v-for="(item, index) in entry.items"
+          :key="item.editPath.join('.')"
+          :class="rowClass([ ...path, index ])"
+          :data-grid-path="gridUi.pathKey([ ...path, index ])"
+        >
           <td class="index object">{{ index }}</td>
           <td class="value">
             <grid-cell :entry="{ kind: 'node', node: item }" :path="[ ...path, index ]" />
@@ -97,6 +112,23 @@ export default {
     },
     storageKey() {
       return `array:${JSON.stringify(this.path)}`
+    }
+  },
+  methods: {
+    cellClass(path) {
+      return {
+        member: true,
+        'search-match': this.gridUi.isSearchMatch(path),
+        'search-active': this.gridUi.isActiveSearchMatch(path)
+      }
+    },
+    rowClass(path) {
+      return {
+        'array-el': true,
+        'list-mode': true,
+        'search-match': this.gridUi.isSearchMatch(path),
+        'search-active': this.gridUi.isActiveSearchMatch(path)
+      }
     }
   }
 }

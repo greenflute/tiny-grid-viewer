@@ -50,7 +50,38 @@ body {
 }
 
 .toolbar {
-  display: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 30;
+  width: max-content;
+  padding: 4px 5px;
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--grid-border);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+}
+
+.filter-input {
+  width: 18rem;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--grid-border));
+  font: inherit;
+}
+
+.search-button {
+  border: 1px solid var(--vscode-button-border, var(--grid-border));
+  color: var(--vscode-button-secondaryForeground, var(--vscode-editor-foreground));
+  background: var(--vscode-button-secondaryBackground, transparent);
+  font: inherit;
+  cursor: pointer;
+}
+
+.search-count {
+  color: var(--vscode-descriptionForeground);
 }
 
 .error-panel {
@@ -95,6 +126,22 @@ td.element,
 td.value {
   border: 1px solid var(--grid-border);
   overflow-wrap: anywhere;
+}
+
+.search-match > th,
+.search-match > td,
+td.search-match {
+  outline: 1px solid rgba(220, 180, 60, 0.85);
+  outline-offset: -2px;
+  background-color: rgba(220, 180, 60, 0.12);
+}
+
+.search-active > th,
+.search-active > td,
+td.search-active {
+  outline: 2px solid rgba(255, 210, 80, 0.95);
+  outline-offset: -2px;
+  background-color: rgba(255, 210, 80, 0.22);
 }
 
 th.key {
@@ -300,8 +347,8 @@ td.index.array::after,
 
 .xml-minimap {
   position: fixed;
-  top: 8px;
   right: 6px;
+  bottom: 8px;
   width: 148px;
   height: 210px;
   z-index: 20;

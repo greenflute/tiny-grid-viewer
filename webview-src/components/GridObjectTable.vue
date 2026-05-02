@@ -6,7 +6,12 @@
     :storage-key="storageKey"
   >
     <template #body>
-      <tr v-for="row in rows" class="object member" :key="row.id">
+      <tr
+        v-for="row in rows"
+        :class="rowClass(childPath(row.id))"
+        :key="row.id"
+        :data-grid-path="gridUi.pathKey(childPath(row.id))"
+      >
         <th class="object key">
           <span class="key-inline">{{ row.key }}</span>
         </th>
@@ -23,6 +28,7 @@ import ResizableTable from './ResizableTable.vue'
 import { rowsForNode } from '../gridRows'
 
 export default {
+  inject: [ 'gridUi' ],
   components: { ResizableTable },
   props: [
     'node',
@@ -47,6 +53,14 @@ export default {
   methods: {
     childPath(key) {
       return [ ...this.path, key ]
+    },
+    rowClass(path) {
+      return {
+        object: true,
+        member: true,
+        'search-match': this.gridUi.isSearchMatch(path),
+        'search-active': this.gridUi.isActiveSearchMatch(path)
+      }
     }
   }
 }

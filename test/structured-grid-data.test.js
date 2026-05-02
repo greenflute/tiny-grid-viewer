@@ -1,6 +1,12 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 const { getDocumentKind, parseStructuredGrid, updateStructuredCell } = require('../editor/structured-grid-data')
+const {
+  countNodesUpTo,
+  validateDocumentBeforeParse,
+  validateGridNodeCount,
+  validateUriBeforeRead
+} = require('../editor/document-limits')
 
 test('parses json objects into grid nodes', () => {
   const doc = parseStructuredGrid('{"name":"demo","items":[{"id":1}]}', 'json')
@@ -12,6 +18,7 @@ test('parses json objects into grid nodes', () => {
 
 test('recognizes jsonc and ini-style extensions', () => {
   assert.equal(getDocumentKind({ fileName: 'settings.jsonc' }), 'json')
+  assert.equal(getDocumentKind({ fileName: 'map.geojson' }), 'json')
   assert.equal(getDocumentKind({ fileName: 'app.cfg' }), 'ini')
   assert.equal(getDocumentKind({ fileName: 'app.config' }), 'ini')
 })
@@ -77,4 +84,68 @@ test('parses tree command output into tree nodes', () => {
   assert.equal(doc.children[1].name, 'dir')
   assert.equal(doc.children[1].children[0].name, 'b.txt')
   assert.equal(doc.children[2].name, '1 directory, 2 files')
+})
+
+test('counts grid nodes with an early limit', () => {
+  const doc = parseStructuredGrid('{"items":[{"id":1},{"id":2}]}', 'json')
+
+  assert.equal(countNodesUpTo(doc, 3), 3)
+})
+
+test('rejects files above the configured byte limit before parsing', () => {
+  const document = {
+    uri: {},
+    getText: () => 'abcdef',
+    lineCount: 1
+  }
+
+  assert.throws(
+    () => validateDocumentBeforeParse(document, 'json', {
+      maxFileSizeMB: 0.000001,
+      maxJsonlRows: 10,
+      maxGridNodes: 10
+    }),
+    /larger than the configured/
+  )
+})
+
+test('rejects file uris above the configured byte limit before reading', () => {
+  assert.throws(
+    () => validateUriBeforeRead({ fsPath: __filename }, {
+      maxFileSizeMB: 0.000001,
+      maxJsonlRows: 10,
+      maxGridNodes: 10
+    }),
+    /larger than the configured/
+  )
+})
+
+test('rejects jsonl files above the configured row limit before parsing', () => {
+  const document = {
+    uri: {},
+    getText: () => '{"id":1}\n{"id":2}\n{"id":3}\n',
+    lineCount: 3
+  }
+
+  assert.throws(
+    () => validateDocumentBeforeParse(document, 'jsonl', {
+      maxFileSizeMB: 1,
+      maxJsonlRows: 2,
+      maxGridNodes: 10
+    }),
+    /above the configured/
+  )
+})
+
+test('rejects parsed documents above the configured grid node limit', () => {
+  const doc = parseStructuredGrid('{"items":[{"id":1},{"id":2}]}', 'json')
+
+  assert.throws(
+    () => validateGridNodeCount(doc, {
+      maxFileSizeMB: 1,
+      maxJsonlRows: 10,
+      maxGridNodes: 3
+    }),
+    /more than 3 grid nodes/
+  )
 })

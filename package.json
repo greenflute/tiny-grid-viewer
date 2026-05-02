@@ -65,6 +65,9 @@
             "filenamePattern": "*.jsonc"
           },
           {
+            "filenamePattern": "*.geojson"
+          },
+          {
             "filenamePattern": "*.yaml"
           },
           {
@@ -94,7 +97,30 @@
         ],
         "priority": "option"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Tiny Grid Viewer",
+      "properties": {
+        "tinyGridViewer.maxFileSizeMB": {
+          "type": "number",
+          "default": 100,
+          "minimum": 0,
+          "description": "Maximum file size in MB that Tiny Grid Viewer will parse. Set to 0 to disable this guard."
+        },
+        "tinyGridViewer.maxJsonlRows": {
+          "type": "number",
+          "default": 1000000,
+          "minimum": 0,
+          "description": "Maximum JSONL line count that Tiny Grid Viewer will parse. Set to 0 to disable this guard."
+        },
+        "tinyGridViewer.maxGridNodes": {
+          "type": "number",
+          "default": 1000000,
+          "minimum": 0,
+          "description": "Maximum number of grid nodes that Tiny Grid Viewer will render after parsing. Set to 0 to disable this guard."
+        }
+      }
+    }
   },
   "scripts": {
     "serve": "vue-cli-service serve",

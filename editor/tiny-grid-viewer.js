@@ -1,8 +1,14 @@
 const vscode = require('vscode')
 const path = require('path')
+const fs = require('fs')
 const getNonce = require('./util').getNonce
 const { flattenXmlTree, parseXmlGrid, updateXmlCell } = require('./xml-grid-data')
 const { getDocumentKind, parseStructuredGrid, updateStructuredCell } = require('./structured-grid-data')
+const {
+  getConfiguredLimits,
+  validateDocumentBeforeParse,
+  validateGridNodeCount
+} = require('./document-limits')
 
 class TinyGridViewer {
   constructor(document, webviewPanel, context) {
@@ -12,16 +18,13 @@ class TinyGridViewer {
 
     this.webviewPanel.webview.options = {
       enableScripts: true,
-      retainContextWhenHidden: true
+      retainContextWhenHidden: true,
+      localResourceRoots: [
+        vscode.Uri.file(path.join(this.context.extensionPath, 'webview'))
+      ]
     }
 
     this.webviewPanel.webview.html = this.getHtmlForWebview()
-
-    this.changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
-      if (e.document.uri.toString() === this.document.uri.toString()) {
-        this.updateWebview()
-      }
-    })
 
     this.webviewPanel.webview.onDidReceiveMessage(msg => {
       switch (msg.type) {
@@ -45,9 +48,10 @@ class TinyGridViewer {
     const appCssUri = this.webviewPanel.webview.asWebviewUri(vscode.Uri.file(
       path.join(this.context.extensionPath, 'webview', 'css', 'app.css')
     ))
-    const chunkVendorsCssUri = this.webviewPanel.webview.asWebviewUri(vscode.Uri.file(
-      path.join(this.context.extensionPath, 'webview', 'css', 'chunk-vendors.css')
-    ))
+    const chunkVendorsCssPath = path.join(this.context.extensionPath, 'webview', 'css', 'chunk-vendors.css')
+    const chunkVendorsCssLink = fs.existsSync(chunkVendorsCssPath)
+      ? `<link href="${this.webviewPanel.webview.asWebviewUri(vscode.Uri.file(chunkVendorsCssPath))}" rel="stylesheet">`
+      : ''
 
     const nonce = getNonce()
 
@@ -63,7 +67,7 @@ class TinyGridViewer {
           script-src 'nonce-${nonce}';"
         />
         <title>Tiny Grid Viewer</title>
-        <link href="${chunkVendorsCssUri}" rel="stylesheet">
+        ${chunkVendorsCssLink}
         <link href="${appCssUri}" rel="stylesheet">
       </head>
       <body>
@@ -77,10 +81,17 @@ class TinyGridViewer {
 
   updateWebview() {
     try {
+      if (this.document.openError) {
+        throw new Error(this.document.openError)
+      }
+
       const kind = getDocumentKind(this.document)
+      const limits = getConfiguredLimits()
+      validateDocumentBeforeParse(this.document, kind, limits)
       const doc = kind === 'xml'
         ? parseXmlGrid(this.document.getText())
         : parseStructuredGrid(this.document.getText(), kind)
+      validateGridNodeCount(doc, limits)
       this.webviewPanel.webview.postMessage({
         type: 'update',
         doc,
@@ -98,30 +109,39 @@ class TinyGridViewer {
 
   async applyEdit(msg) {
     try {
+      if (this.document.openError) {
+        throw new Error(this.document.openError)
+      }
+
       const kind = getDocumentKind(this.document)
       const nextText = kind === 'xml'
         ? updateXmlCell(this.document.getText(), msg.editPath, msg.field, msg.value, {
           attributeName: msg.attributeName
         })
         : updateStructuredCell(this.document.getText(), kind, msg.editPath, msg.value)
-      const edit = new vscode.WorkspaceEdit()
-      edit.replace(this.document.uri, this.getFullDocumentRange(), nextText)
-      await vscode.workspace.applyEdit(edit)
+      await this.writeDocument(nextText)
     } catch (error) {
       vscode.window.showErrorMessage(`Could not update document: ${error.message}`)
       this.updateWebview()
     }
   }
 
-  getFullDocumentRange() {
-    const lastLine = Math.max(this.document.lineCount - 1, 0)
-    const lastChar = this.document.lineAt(lastLine).text.length
-    return new vscode.Range(0, 0, lastLine, lastChar)
+  async reloadDocument() {
+    if (this.document.openError) {
+      return
+    }
+
+    const bytes = await vscode.workspace.fs.readFile(this.document.uri)
+    this.document.updateText(Buffer.from(bytes).toString('utf8'))
   }
 
-  cleanup() {
-    this.changeDocumentSubscription.dispose()
+  async writeDocument(nextText) {
+    await vscode.workspace.fs.writeFile(this.document.uri, Buffer.from(nextText, 'utf8'))
+    this.document.updateText(nextText)
+    this.updateWebview()
   }
+
+  cleanup() {}
 }
 
 exports.TinyGridViewer = TinyGridViewer

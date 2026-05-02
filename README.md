@@ -9,10 +9,11 @@ Inspired by [`json-grid-viewer`](https://github.com/dutchigor/json-grid-viewer),
 - Accepts common loose XML conveniences supported by `fast-xml-parser`, JSON/HJSON, JSONL, YAML, INI, TOML and `tree` command output.
 - Updates the grid live when the underlying document changes and remains valid.
 - Supports border-based column resizing, double-click column reset, array/table view switching and basic cell editing.
+- Refuses very large inputs before they can freeze the extension host, with configurable size, JSONL row and rendered-node limits.
 
 ## Usage
 
-Open an `.xml`, `.xsd`, `.svg`, `.wsdl`, `.json`, `.jsonl`, `.jsonc`, `.yaml`, `.yml`, `.ini`, `.cfg`, `.conf`, `.config`, `.properties`, `.toml` or `.tree` file, then right click the editor or file and choose **Open With... > Tiny Grid Viewer**.
+Open an `.xml`, `.xsd`, `.svg`, `.wsdl`, `.json`, `.jsonl`, `.jsonc`, `.geojson`, `.yaml`, `.yml`, `.ini`, `.cfg`, `.conf`, `.config`, `.properties`, `.toml` or `.tree` file, then right click the editor or file and choose **Open With... > Tiny Grid Viewer**.
 
 Double click editable cells to update values in place. XML editing supports:
 
@@ -28,6 +29,16 @@ Current editing limits:
 - Elements that contain child elements cannot have their value edited directly.
 - Adding, deleting, moving nodes and preserving exact original whitespace are not supported yet.
 - Saving from the grid rewrites the XML document through the parser/builder, so formatting may change.
+
+## Large Files
+
+Tiny Grid Viewer builds a complete recursive grid model and sends it to a VS Code webview. There is no single universal file-size ceiling: a small but deeply nested GeoJSON can create more grid nodes than a larger flat JSONL file. The default guards are intentionally conservative:
+
+- `tinyGridViewer.maxFileSizeMB`: `100`
+- `tinyGridViewer.maxJsonlRows`: `100000`
+- `tinyGridViewer.maxGridNodes`: `100000`
+
+Set any of these values to `0` to disable that guard, or raise them if your machine can tolerate the extra parsing, message serialization and DOM rendering cost. Files beyond the configured limits are shown as a readable refusal message instead of attempting to render a blank or unresponsive editor.
 
 ## Development
 
