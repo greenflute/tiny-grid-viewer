@@ -1,0 +1,63 @@
+name: Build VSIX
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-vsix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build webview bundle
+        run: npm run build
+
+      - name: Install VSCE
+        run: npm install --global @vscode/vsce
+
+      - name: Show tool versions
+        run: |
+          node -v
+          npm -v
+          vsce --version
+
+      - name: Package VSIX
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          VSIX_NAME="tiny-grid-viewer-${VERSION}.vsix"
+          vsce package --out "$VSIX_NAME"
+          echo "VSIX_NAME=$VSIX_NAME" >> "$GITHUB_ENV"
+
+      - name: Create or update GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          gh release create "$TAG_NAME" "${{ env.VSIX_NAME }}" \
+            --title "$TAG_NAME" \
+            --generate-notes \
+          || gh release upload "$TAG_NAME" "${{ env.VSIX_NAME }}" --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}

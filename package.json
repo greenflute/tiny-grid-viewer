@@ -1,0 +1,140 @@
+{
+  "name": "tiny-grid-viewer",
+  "publisher": "greenflute",
+  "displayName": "Tiny Grid Viewer",
+  "description": "Get a better overview of XML, JSON and YAML files by viewing them in a recursive grid.",
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#d4e1ef",
+    "theme": "light"
+  },
+  "version": "0.1.0",
+  "repository": "github:greenflute/tiny-grid-viewer",
+  "engines": {
+    "node": "16.x",
+    "vscode": "^1.46.0"
+  },
+  "categories": [
+    "Visualization"
+  ],
+  "keywords": [
+    "xml",
+    "json",
+    "jsonl",
+    "yaml",
+    "ini",
+    "toml",
+    "tree",
+    "comments",
+    "recursive",
+    "drilldown",
+    "hierarchy",
+    "grid",
+    "overview"
+  ],
+  "qna": "https://github.com/greenflute/tiny-grid-viewer/discussions",
+  "main": "./editor/main.js",
+  "activationEvents": [
+    "onCustomEditor:tinyGridViewer.document"
+  ],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "tinyGridViewer.document",
+        "displayName": "Tiny Grid Viewer",
+        "selector": [
+          {
+            "filenamePattern": "*.xml"
+          },
+          {
+            "filenamePattern": "*.xsd"
+          },
+          {
+            "filenamePattern": "*.svg"
+          },
+          {
+            "filenamePattern": "*.wsdl"
+          },
+          {
+            "filenamePattern": "*.json"
+          },
+          {
+            "filenamePattern": "*.jsonl"
+          },
+          {
+            "filenamePattern": "*.jsonc"
+          },
+          {
+            "filenamePattern": "*.yaml"
+          },
+          {
+            "filenamePattern": "*.yml"
+          },
+          {
+            "filenamePattern": "*.ini"
+          },
+          {
+            "filenamePattern": "*.cfg"
+          },
+          {
+            "filenamePattern": "*.properties"
+          },
+          {
+            "filenamePattern": "*.conf"
+          },
+          {
+            "filenamePattern": "*.config"
+          },
+          {
+            "filenamePattern": "*.toml"
+          },
+          {
+            "filenamePattern": "*.tree"
+          }
+        ],
+        "priority": "option"
+      }
+    ]
+  },
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "export NODE_OPTIONS=--openssl-legacy-provider && vue-cli-service build",
+    "lint": "vue-cli-service lint",
+    "test": "node --test",
+    "vscode:prepublish": "npm run build"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.0",
+    "hjson": "^3.2.2",
+    "ini": "^6.0.0",
+    "smol-toml": "^1.6.1",
+    "yaml": "^2.8.3"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.46.0",
+    "@vue/cli-plugin-babel": "~4.5.13",
+    "@vue/cli-plugin-eslint": "~4.5.13",
+    "@vue/cli-service": "~4.5.13",
+    "@vue/compiler-sfc": "^3.2.13",
+    "babel-eslint": "^10.1.0",
+    "core-js": "^3.18.0",
+    "eslint": "^6.8.0",
+    "eslint-plugin-vue": "^7.0.0-0",
+    "vue": "^3.2.13"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/vue3-essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "license": "SEE LICENSE IN LICENSE"
+}
